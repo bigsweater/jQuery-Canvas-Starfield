@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>A Starfield jQuery Plugin</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href='http://fonts.googleapis.com/css?family=Audiowide|Roboto+Condensed' rel='stylesheet' type='text/css'>
+		<style>
+			html,
+			body,
+			section,
+			div         { margin:0; padding:0; }
+			html        { height:100%; width:100%; }
+			body        { min-height:100%; width:100%; }
+			.content    { background-color:rgba(255,255,255,.2); color:#fff; font-family:'Roboto Condensed', sans-serif; font-size:16px; height:400px; left:50%; margin:-250px 0 0 -250px; padding:50px; position:absolute; top:50%; width:400px; z-index:1; }
+
+			.content h1 { font-family:'Audiowide', cursive; font-size:36px; text-align:center; }
+
+			.starfield  { height:100%; position:fixed; width:100%; z-index:0; }
+		</style>
+	</head>
+	<body>
+		<!--[if lt IE 7]>
+			<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+		<![endif]-->
+		<section class="content">
+			<h1>Testing</h1>
+			<p>This plugin includes a few options. They look like this:</p>
+			<p>$('.yourdiv).starfield({<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;starColor:	"rgba(255,255,255,1)", <br />
+		&nbsp;&nbsp;&nbsp;&nbsp;bgColor:	"rgba(0,0,0,1)",<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;mouseColor:	"rgba(0,0,0,0.2)",<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;fps:		15,<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;speed:		5,<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;;quantity:	512,<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;ratio:		256,<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;class:		"starfield"<br >
+	})</p>
+		</section>
+
+		<div class="starfield"></div>
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
+		<script src="starfield.min.js"></script>
+		<script>
+			$(document).ready( function(){
+				$('.starfield').starfield();
+			});
+		</script>
+	</body>
+</html>
