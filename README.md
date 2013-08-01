@@ -19,3 +19,4 @@ $('.yourdiv').starfield({
 });
 ```
 
+TODO: Fix multiple instances breaking each other real bad-like

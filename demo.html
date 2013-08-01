@@ -20,7 +20,7 @@
 
 			.content h1 { font-family:'Audiowide', cursive; font-size:36px; text-align:center; }
 
-			.starfield  { height:100%; position:fixed; width:100%; z-index:0; }
+			.starfield  { height:100%; position:absolute; width:100%; z-index:0; }
 		</style>
 	</head>
 	<body>
@@ -36,17 +36,18 @@
 		&nbsp;&nbsp;&nbsp;&nbsp;mouseColor:	"rgba(0,0,0,0.2)",<br />
 		&nbsp;&nbsp;&nbsp;&nbsp;fps:		15,<br />
 		&nbsp;&nbsp;&nbsp;&nbsp;speed:		5,<br />
-		&nbsp;&nbsp;&nbsp;&nbsp;;quantity:	512,<br />
+		&nbsp;&nbsp;&nbsp;&nbsp;quantity:	512,<br />
 		&nbsp;&nbsp;&nbsp;&nbsp;ratio:		256,<br />
 		&nbsp;&nbsp;&nbsp;&nbsp;class:		"starfield"<br >
 	})</p>
+			<div style="width:50px; height:50px;" class="starfield2"></div>
 		</section>
 
 		<div class="starfield"></div>
 
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 		<script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
-		<script src="starfield.min.js"></script>
+		<script src="starfield.js"></script>
 		<script>
 			$(document).ready( function(){
 				$('.starfield').starfield();
