@@ -11,6 +11,7 @@
 	var defaults = {
 		starColor:	"rgba(255,255,255,1)", 
 		bgColor:	"rgba(0,0,0,1)",
+		mouseMove:	true,
 		mouseColor:	"rgba(0,0,0,0.2)",
 		mouseSpeed:	20,
 		fps:		15,
@@ -113,8 +114,7 @@
 			mouse_x=cursor_x-x;
 			mouse_y=cursor_y-y;
 			context.fillRect(0,0,w,h);
-			for(var i=0;i<n;i++)
-				{
+			for(var i=0;i<n;i++) {
 				test=true;
 				star_x_save=star[i][3];
 				star_y_save=star[i][4];
@@ -123,17 +123,17 @@
 				star[i][2]-=star_speed; if(star[i][2]>z) { star[i][2]-=z; test=false; } if(star[i][2]<0) { star[i][2]+=z; test=false; }
 				star[i][3]=x+(star[i][0]/star[i][2])*star_ratio;
 				star[i][4]=y+(star[i][1]/star[i][2])*star_ratio;
-				if(star_x_save>0&&star_x_save<w&&star_y_save>0&&star_y_save<h&&test)
-					{
+				if(star_x_save>0&&star_x_save<w&&star_y_save>0&&star_y_save<h&&test) {
 					context.lineWidth=(1-star_color_ratio*star[i][2])*2;
 					context.beginPath();
 					context.moveTo(star_x_save,star_y_save);
 					context.lineTo(star[i][3],star[i][4]);
 					context.stroke();
 					context.closePath();
-					}
 				}
-			timeout=setTimeout('anim()',fps);
+			}
+
+			timeout = requestAnimationFrame(anim);
 		}
 		window.anim = anim;
 
@@ -145,28 +145,63 @@
 		}
 
 		function start() {
-			resize();
+			resize.resize();
 			anim();
 		}
 
-		function resize() {
-			w = $(el).width();
-			h = $(el).height();
-			x=Math.round(w/2);
-			y=Math.round(h/2);
-			z=(w+h)/2;
-			star_color_ratio=1/z;
-			cursor_x=x;
-			cursor_y=y;
-			$('canvas', el).remove();
-			init();
+		var resize = {
+			resize: function() {
+				w = $(el).width();
+				h = $(el).height();
+				x=Math.round(w/2);
+				y=Math.round(h/2);
+				z=(w+h)/2;
+				star_color_ratio=1/z;
+				cursor_x=x;
+				cursor_y=y;
+				$('canvas', el).remove();
+				init();
+			}
+		};
+
+		/**
+		 * requestAnimationFrame shim layer with setTimeout fallback
+		 * @see http://paulirish.com/2011/requestanimationframe-for-smart-animating
+		 */
+		(function() {
+		    var lastTime = 0;
+		    var vendors = ['ms', 'moz', 'webkit', 'o'];
+		    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+		        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+		        window.cancelAnimationFrame = 
+		          window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+		    }
+		 
+		    if (!window.requestAnimationFrame)
+		        window.requestAnimationFrame = function(callback, element) {
+		            var currTime = new Date().getTime();
+		            var timeToCall = Math.max(0, fps - (currTime - lastTime));
+		            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+		              timeToCall);
+		            lastTime = currTime + timeToCall;
+		            return id;
+		       };
+		 
+		    if (!window.cancelAnimationFrame)
+		        window.cancelAnimationFrame = function(id) {
+		            clearTimeout(id);
+		        };
+		}());
+
+		
+		start();
+		
+		if (starfield.settings.mouseMove) {
+			window.onmousemove=move;	
 		}
 
-		document.onmousemove=move;
-		start();
-
 		$(window).resize(function(){
-			resize();
+			resize.resize();
 		})
 
 		$(window).mousedown(function(){
