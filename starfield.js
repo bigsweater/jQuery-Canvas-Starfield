@@ -78,6 +78,9 @@
 			this.x					= Math.round(this.w / 2);
 			this.y					= Math.round(this.h / 2);
 
+			// Check if the device is in portrait orientation
+			this.portrait			= this.w < this.h;
+
 			// Get the ratio of the old height to the new height
 			var ratX 				= this.w / initW;
 			var ratY				= this.h / initH;
@@ -146,6 +149,11 @@
 			
 			this.fps				= this.settings.fps;
 
+			// Check for device orientation support
+			this.desktop			= !navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|BB10|IEMobile)/);
+			this.orientationSupport	= window.DeviceOrientationEvent !== undefined;
+			this.portrait			= null;
+
 			// Inject the canvas element
 			var canvasInit = function(){
 				that.w			= that.$el.width();
@@ -153,6 +161,8 @@
 
 				that.initW		= that.w;
 				that.initH		= that.h;
+
+				that.portrait	= that.w < that.h;
 
 				that.wrapper	= $('<canvas />')
 				.addClass(that.settings.divclass);
@@ -273,15 +283,40 @@
 			animId = window.requestAnimationFrame(function(){that.loop()});
 		},
 
-		// Do stuff on DOM events
 		move: function(){
-			var doc		= document.documentElement;
+			var doc	= document.documentElement;
 
-			$(window).mousemove(function(evt){
-				evt				= evt || event;
-				that.cursor_x	= evt.pageX || evt.clientX + doc.scrollLeft - doc.clientLeft;
-				that.cursor_y	= evt.pageY || evt.clientY + doc.scrollTop - doc.clientTop;
-			});
+			if (this.orientationSupport && !this.desktop) {
+				//$('<p class="output"></p>').prependTo('.content');
+				//var output = document.querySelector('.output');
+				window.addEventListener('deviceorientation', handleOrientation, false);
+			} else {
+				window.addEventListener('mousemove', handleMousemove, false);
+			}
+
+			function handleOrientation(event) {
+				if( event.beta !== null && event.gamma !== null) {
+					var x = event.gamma, y = event.beta;
+
+					if (!that.portrait) {
+						x = event.beta * -1;
+						y = event.gamma;
+					}
+
+					that.cursor_x	= (that.w / 2) + (x * 5);
+					that.cursor_y	= (that.h / 2) + (y * 5);
+
+					/*var output = document.querySelector('.output');
+					output.innerHTML = "rotZ : " + Math.round(event.alpha) + "<br />\n";
+					output.innerHTML += "rotX: " + Math.round(event.beta) + "<br />\n";
+					output.innerHTML += "rotY: " + Math.round(event.gamma) + "<br />\n";*/
+				}
+			}
+
+			function handleMousemove(event) {
+				that.cursor_x	= event.pageX || event.clientX + doc.scrollLeft - doc.clientLeft;
+				that.cursor_y	= event.pageY || event.clientY + doc.scrollTop - doc.clientTop;
+			}
 		},
 
 		stop: function(){
@@ -304,13 +339,9 @@
 				this.loop();
 			}
 
-			$(window).resize(function() {
-				that.resizer();
-			});
+			window.addEventListener('resize', function(){that.resizer()}, false);
 
-			window.addEventListener('orientationchange', function() {
-				that.resizer();
-			}, false);
+			window.addEventListener('orientationchange', function(){that.resizer()}, false);
 
 			// Move stars on mouse move
 			if (this.settings.mouseMove) {
