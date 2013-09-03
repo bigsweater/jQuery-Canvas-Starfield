@@ -11,9 +11,46 @@
 		this.$el		= $(el);
 		this.options	= options;
 
-		obj				= this;
+		that			= this;
 	};
 
+	var isPlaying;
+	var isInited	= false;
+	var canCanvas	= false;
+	var animId;
+
+	// http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+	// http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
+
+	// requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
+
+	// MIT license
+
+	(function() {
+		var lastTime = 0;
+		var vendors = ['ms', 'moz', 'webkit', 'o'];
+		for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+			window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+			window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
+									   || window[vendors[x]+'CancelRequestAnimationFrame'];
+		}
+	 
+		if (!window.requestAnimationFrame)
+			window.requestAnimationFrame = function(callback, element) {
+				var currTime = new Date().getTime();
+				var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+				var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+				  timeToCall);
+				lastTime = currTime + timeToCall;
+				return id;
+			};
+	 
+		if (!window.cancelAnimationFrame)
+			window.cancelAnimationFrame = function(id) {
+				clearTimeout(id);
+			};
+	}());
+  
 	// Plugin prototype
 	Starfield.prototype = {
 		// Default settings
@@ -24,72 +61,151 @@
 			mouseColor:	"rgba(0,0,0,0.2)",
 			mouseSpeed:	20,
 			fps:		15,
-			speed:		5,
+			speed:		3,
 			quantity:	512,
 			ratio:		256,
-			class:		"starfield"
+			divclass:	"starfield"
 		},
 
 		// Resize the canvas
 		resizer: function() {
-			this.w	= $(this.el).width();
-			this.h	= $(this.el).height();
-			this.x	= Math.round(this.w / 2);
-			this.y	= Math.round(this.h / 2);
-			this.z	= (this.w + this.h) / 2;
-			this.star_color_ratio	= 1 / this.z;
-			this.cursor_x	= this.x;
-			this.cursor_y	= this.y;
+			var oldStar				= this.star;
+			var initW				= this.context.canvas.width;
+			var initH				= this.context.canvas.height;
 
-			$(window).resize(function(){
-				$('canvas', obj.el).remove();
-				// Initialize
-				obj.init();
-			});
+			this.w					= this.$el.width();
+			this.h					= this.$el.height();
+			this.x					= Math.round(this.w / 2);
+			this.y					= Math.round(this.h / 2);
 
-			// Initialize
-			this.init();
-		},
+			// Get the ratio of the old height to the new height
+			var ratX 				= this.w / initW;
+			var ratY				= this.h / initH;
 
-		// Initialize the plugin
-		init: function() {
-			this.canvas();
+			this.context.canvas.width	= this.w;
+			this.context.canvas.height	= this.h;
 
-			// Context for the canvas element
-			this.starz			= $('canvas', this.el);
-			this.starz.width	= this.w;
-			this.starz.height	= this.h;
-			this.context		= this.starz[0].getContext('2d');
-
-			// Create an array for every star
+			// Recalculate the position of each star proportionally to new w and h
 			for(var i = 0; i < this.n; i++) {
-				this.star[i]	= new Array(5); 
-				this.star[i][0]	= Math.random() * this.w * 2 - this.x * 2;
-				this.star[i][1]	= Math.random() * this.h * 2 - this.y * 2;
-				this.star[i][2]	= Math.round(Math.random() * this.z);
-				this.star[i][3]	= 0;
-				this.star[i][4]	= 0;
+				this.star[i][0]	= oldStar[i][0] * ratX;
+				this.star[i][1]	= oldStar[i][1] * ratY;
+
+				this.star[i][3] = this.x + (this.star[i][0] / this.star[i][2]) * this.star_ratio;
+				this.star[i][4] = this.y + (this.star[i][1] / this.star[i][2]) * this.star_ratio;
 			}
 
-			// Draw the starfield on the canvas
-			this.context.fillStyle		= this.settings.bgColor;
+			that.context.fillStyle		= that.settings.bgColor;
 			this.context.strokeStyle	= this.settings.starColor;
 		},
 
-		// Inject the canvas element
-		canvas: function(){
-			// Create canvas element
-			this.w = $(this.el).width();
-			this.h = $(this.el).height();
+		init: function() {
+			// Get default settings 
+			this.settings = $.extend({}, this.defaults, this.options);
 
-			this.wrapper = $('<canvas />')
-			.attr({'width': this.w, 'height': this.h})
-			.addClass(this.settings.class);
+			// Query variables
+			var url	= document.location.href;
+			this.n	= parseInt(
+				(url.indexOf('n=') != -1) ? url.substring(url.indexOf('n=') + 2, (
+					(url.substring(
+						url.indexOf('n=') + 2,
+						url.length)
+					).indexOf('&') != -1) ? url.indexOf('n=') + 2 + (url.substring(
+						url.indexOf('n=') + 2,
+						url.length)
+					).indexOf('&') :
+						url.length) :
+							this.settings.quantity
+			);
 
-			this.wrapper.appendTo(this.el);
+			this.flag				= true;
+			this.test 				= true;
+			this.w					= 0;
+			this.h					= 0;
+			this.x					= 0;
+			this.y					= 0;
+			this.z					= 0;
+			this.star_color_ratio	= 0;
+			this.star_x_save		= 0;
+			this.star_y_save		= 0;
+			this.star_ratio			= this.settings.ratio;
+			this.star_speed			= this.settings.speed;
+			this.star_speed_save	= 0;
+			this.star				= new Array(this.n);
+			this.color				= this.settings.starColor;
+			this.opacity			= 0.1;
+
+			this.cursor_x			= 0;
+			this.cursor_y			= 0;
+			this.mouse_x			= 0;
+			this.mouse_y			= 0;
+
+			this.canvas_x			= 0;
+			this.canvas_y			= 0;
+			this.canvas_w			= 0;
+			this.canvas_h			= 0;
+			
+			this.fps				= this.settings.fps;
+
+			// Inject the canvas element
+			var canvasInit = function(){
+				that.w			= that.$el.width();
+				that.h			= that.$el.height();
+
+				that.initW		= that.w;
+				that.initH		= that.h;
+
+				that.wrapper	= $('<canvas />')
+				.addClass(that.settings.divclass);
+
+				that.wrapper.appendTo(that.el);
+
+				that.starz	= $('canvas', that.el);
+
+				if (that.starz[0].getContext) { // Can canvas?
+					that.context	= that.starz[0].getContext('2d');
+					canCanvas		= true;
+				}
+
+				that.context.canvas.width = that.w;
+				that.context.canvas.height = that.h;
+			}
+			canvasInit();
+
+			// Create initial star array and canvas context
+			var starInit = function(){
+				// Get context for the canvas element
+				if(canCanvas){ // Check for canvas drawering abilities.
+					that.x					= Math.round(that.w / 2);
+					that.y					= Math.round(that.h / 2);
+					that.z					= (that.w + that.h) / 2;
+					that.star_color_ratio	= 1 / that.z;
+					that.cursor_x			= that.x;
+					that.cursor_y			= that.y;
+
+					// Big bang
+					for(var i = 0; i < that.n; i++) {
+						that.star[i]	= new Array(5); 
+
+						that.star[i][0]	= Math.random() * that.w * 2 - that.x * 2;
+						that.star[i][1]	= Math.random() * that.h * 2 - that.y * 2;
+						that.star[i][2]	= Math.round(Math.random() * that.z);
+						that.star[i][3]	= 0;
+						that.star[i][4]	= 0;
+					}
+
+					// Set the colors
+					that.context.fillStyle		= that.settings.bgColor;
+					that.context.strokeStyle	= that.settings.starColor;
+				} else {
+					return;
+				}
+			}
+			starInit();
+
+			isInited = true;
 		},
 
-		// Iterate over every star on the field and move it slightly, depending on things
+		// Iterate over every star on the field and move it slightly
 		anim: function(){
 			this.mouse_x	= this.cursor_x - this.x;
 			this.mouse_y	= this.cursor_y - this.y;
@@ -101,6 +217,7 @@
 				this.star_y_save	= this.star[i][4];
 				this.star[i][0]	+= this.mouse_x >> 4;
 
+				// X coords
 				if(this.star[i][0] > this.x << 1) {
 					this.star[i][0] -= this.w << 1;
 					this.test = false;
@@ -110,6 +227,7 @@
 					this.test = false;
 				}
 
+				// Y coords
 				this.star[i][1] += this.mouse_y >> 4;
 				if(this.star[i][1] > this.y << 1) {
 					this.star[i][1] -= this.h << 1;
@@ -120,6 +238,7 @@
 					this.test = false;
 				}
 
+				// Z coords
 				this.star[i][2] -= this.star_speed;
 				if(this.star[i][2] > this.z) {
 					this.star[i][2] -= this.z;
@@ -133,7 +252,11 @@
 				this.star[i][3] = this.x + (this.star[i][0] / this.star[i][2]) * this.star_ratio;
 				this.star[i][4] = this.y + (this.star[i][1] / this.star[i][2]) * this.star_ratio;
 
-				if(this.star_x_save > 0 && this.star_x_save < this.w && this.star_y_save > 0 && this.star_y_save < this.h && this.test ) {
+				if(this.star_x_save > 0
+				&& this.star_x_save < this.w
+				&& this.star_y_save > 0
+				&& this.star_y_save < this.h
+				&& this.test) {
 					this.context.lineWidth = (1 - this.star_color_ratio * this.star[i][2]) * 2;
 					this.context.beginPath();
 					this.context.moveTo(this.star_x_save,this.star_y_save);
@@ -146,102 +269,53 @@
 
 		loop: function(){
 			this.anim();
-			window.requestAnimationFrame(this.loop.bind(this));
 
-			$(window).resize(function(){
-				cancelAnimationFrame;
-			});
-
-			/**
-			 * requestAnimationFrame shim layer with setTimeout fallback
-			 * @see http://paulirish.com/2011/requestanimationframe-for-smart-animating
-			 */
-			(function() {
-			    var lastTime = 0;
-			    var vendors = ['ms', 'moz', 'webkit', 'o'];
-			    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-			        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-			        window.cancelAnimationFrame = 
-			          window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
-			    }
-			 
-			    if (!window.requestAnimationFrame)
-			        window.requestAnimationFrame = function(callback, element) {
-			            var currTime = new Date().getTime();
-			            var timeToCall = Math.max(0, fps - (currTime - lastTime));
-			            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
-			              timeToCall);
-			            lastTime = currTime + timeToCall;
-			            return id;
-			       };
-			 
-			    if (!window.cancelAnimationFrame)
-			        window.cancelAnimationFrame = function(id) {
-			            clearTimeout(id);
-			        };
-			}());
+			animId = window.requestAnimationFrame(function(){that.loop()});
 		},
 
-		// Detect a mouse movement and do stuff
-		move: window.onmousemove = function(evt){
-			evt			= evt || event;
+		// Do stuff on DOM events
+		move: function(){
 			var doc		= document.documentElement;
-			obj.cursor_x	= evt.pageX || evt.clientX + doc.scrollLeft - doc.clientLeft;
-			obj.cursor_y	= evt.pageY || evt.clientY + doc.scrollTop - doc.clientTop;
+
+			$(window).mousemove(function(evt){
+				evt				= evt || event;
+				that.cursor_x	= evt.pageX || evt.clientX + doc.scrollLeft - doc.clientLeft;
+				that.cursor_y	= evt.pageY || evt.clientY + doc.scrollTop - doc.clientTop;
+			});
+		},
+
+		stop: function(){
+			window.cancelAnimationFrame(animId);
+
+			isPlaying = false;
 		},
 
 		// this.start this whole thing
 		start: function() {
-			// Get default settings 
-			this.settings = $.extend({}, this.defaults, this.options, this.metadata);
-
-			// Variables
-			var url	= document.location.href;
-			this.n	= parseInt(
-				(url.indexOf('n=') != -1) ? url.substring(url.indexOf('n=') + 2, (
-					(url.substring(
-						url.indexOf('n=') + 2,
-						url.length)
-					).indexOf('&') != -1) ? url.indexOf('n=') + 2 + (url.substring(
-						url.indexOf('n=') + 2,
-						url.length)
-					).indexOf('&') :
-						url.length) :
-							this.settings.quantity
-				);
-
-			this.flag	= true;
-			this.test 	= true;
-			this.w		= 0;
-			this.h		= 0;
-			this.x		= 0;
-			this.y		= 0;
-			this.z		= 0;
-			this.star_color_ratio	= 0;
-			this.star_x_save = 0;
-			this.star_y_save;
-			this.star_ratio		= this.settings.ratio;
-			this.star_speed		= this.settings.speed;
-			this.star_speed_save	= 0;
-			this.star			= new Array(this.n);
-			this.color;
-			this.opacity		= 0.1;
-
-			this.cursor_x	= 0;
-			this.cursor_y	= 0;
-			this.mouse_x	= 0;
-			this.mouse_y	= 0;
-
-			this.canvas_x	= 0;
-			this.canvas_y	= 0;
-			this.canvas_w	= 0;
-			this.canvas_h	= 0;
+			// Initialize
+			if (!isInited) {
+				isInited = true;
+				this.init();
+			}
 			
-			this.fps		= this.settings.fps;
+			// Start the animation loop
+			if (!isPlaying) {
+				isPlaying = true;
+				this.loop();
+			}
 
-			// Resize the canvas
-			this.resizer();
-			this.loop();
+			$(window).resize(function() {
+				that.resizer();
+			});
+
+			window.addEventListener('orientationchange', function() {
+				that.resizer();
+			}, false);
+
+			// Move stars on mouse move
+			if (this.settings.mouseMove) {
+				this.move();
+			}
 
 			return this;
 		}
@@ -255,4 +329,6 @@
 			new Starfield(this, options).start();
 		});
 	}
+
+	window.Starfield = Starfield;
 })( jQuery, window, document );
