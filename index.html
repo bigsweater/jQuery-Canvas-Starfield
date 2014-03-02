@@ -13,7 +13,7 @@
     <![endif]-->
   </head>
   <body>
-    <div class="wrapper">
+    <div class="wrapper starfield">
       <header>
         <h1>Jquery-canvas-starfield</h1>
         <p>A jQuery plugin for generating interactive star fields using Canvas.</p>
@@ -56,7 +56,15 @@
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="javascripts/scale.fix.js"></script>
+    <script src="javascripts/starfield.min.js"></script>
+
+    <script>
+      $(document).ready(function(){
+        $('.starfield').starfield();
+      });
+    </script>
     
   </body>
 </html>

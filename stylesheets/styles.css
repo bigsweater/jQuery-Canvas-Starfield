@@ -253,3 +253,10 @@ footer {
     color:#444;
   }
 }
+
+.starfield:after {
+  clear:both;
+  content:'';
+  display:block;
+  *zoom:1;
+}
