@@ -7,6 +7,11 @@ body {
   font-weight:300;
 }
 
+header, section, footer {
+  position:relative;
+  z-index:1;
+}
+
 h1, h2, h3, h4, h5, h6 {
   color:#222;
   margin:0 0 20px;
@@ -252,6 +257,9 @@ footer {
     font-size:12pt;
     color:#444;
   }
+  canvas.starfield {
+    display:block;
+  }
 }
 
 .starfield:after {
@@ -259,4 +267,11 @@ footer {
   content:'';
   display:block;
   *zoom:1;
+}
+
+canvas.starfield {
+  left:0;
+  position:absolute;
+  top:0;
+  z-index:0;
 }
