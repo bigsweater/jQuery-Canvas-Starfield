@@ -54,6 +54,7 @@ a small {
   width:860px;
   margin:0 auto;
   position:relative;
+  z-index:1;
 }
 
 blockquote {
@@ -259,7 +260,7 @@ footer {
     color:#444;
   }
   canvas.starfield {
-    display:block;
+    display:none;
   }
 }
 
